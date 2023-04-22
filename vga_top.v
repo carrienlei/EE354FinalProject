@@ -44,6 +44,7 @@ module vga_top(
 	wire[9:0] hc, vc;
 	wire[15:0] score;
 	wire up,down,left,right;
+	wire q_STILL, q_UP, q_DOWN;
 	wire [3:0] anode;
 	wire [11:0] rgb;
 	wire rst;
@@ -125,6 +126,13 @@ module vga_top(
 				  2'b11: SSD = SSD3;
 		endcase 
 	end
+
+	block_controller SM(.clk(sys_clk), .reset(reset), 
+								.q_I(q_I), .q_G1get(q_G1get), .q_G1(q_g1), .q_G10get(q_G10get),
+								.q_G10(q_G10), .q_G101get(q_G101get), .q_G101(q_G101),
+								.q_G1011get(q_G1011get), .q_G1011(q_G1011), .q_Opening(q_Opening),
+								.q_Bad(Bad)
+								);	
 
 	// Following is Hex-to-SSD conversion
 	always @ (SSD) 

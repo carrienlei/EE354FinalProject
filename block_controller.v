@@ -5,10 +5,22 @@ module block_controller(
 	input bright,
 	input rst,
 	input up, input down, input left, input right,
+	// input up, input down,
 	input [9:0] hCount, vCount,
 	output reg [11:0] rgb,
-	output reg [11:0] background
+	output reg [11:0] background,
+	output q_STILL, q_UP, q_DOWN
    );
+
+	reg[2:0] state;
+	assign{q_STILL, q_UP, q_DOWN} = state;
+
+	localparam
+		q_STILL = 3'b001,
+	    q_UP = 3'b010,
+	    q_DOWN = 3'b100,
+		UNK = 3'bXXX;
+
 	wire block_fill;
 	wire sand_zone;
 	wire shark1;
@@ -60,9 +72,8 @@ module block_controller(
 
 	always@(posedge clk, posedge rst) 
 	begin
-		if(rst)
-		begin 
-			//rough values for center of screen
+		if(rst) begin
+		
 			xpos<=450;
 			ypos<=250;
 			shark1xpos <= 220;
@@ -73,58 +84,117 @@ module block_controller(
 			bottle1ypos <= 440;
 			bottle2xpos <= 570;
 			bottle2ypos <= 190;
-
-		end
-		else if (clk) begin
-		
-		/* Note that the top left of the screen does NOT correlate to vCount=0 and hCount=0. The display_controller.v file has the 
-			synchronizing pulses for both the horizontal sync and the vertical sync begin at vcount=0 and hcount=0. Recall that after 
-			the length of the pulse, there is also a short period called the back porch before the display area begins. So effectively, 
-			the top left corner corresponds to (hcount,vcount)~(144,35). Which means with a 640x480 resolution, the bottom right corner 
-			corresponds to ~(783,515).  
-		*/
-			shark1xpos <= shark1xpos -3;
-			
-			shark2xpos <= shark2xpos -2;
-			
-			bottle2xpos <= bottle2xpos - 1;
-
-			if(right) begin
-				xpos<=xpos+2; //change the amount you increment to make the speed faster 
-				if(xpos==800) //these are rough values to attempt looping around, you can fine-tune them to make it more accurate- refer to the block comment above
-					xpos<=150;
+			state <= q_STILL;
 			end
-			else if(left) begin
-				xpos<=xpos-2;
-				if(xpos==150)
-					xpos<=800;
-			end
-			else if(up) begin
-				ypos<=ypos-2;
-				if(ypos==34)
-					ypos<=514;
-			end
-			else if(down) begin
-				ypos<=ypos+2;
-				if(ypos==514)
-					ypos<=34;
-			end
-			
-			if ( ((xpos <= shark1xpos+10)&& (xpos >= shark1xpos-10) && (ypos <= shark1ypos+10) && (ypos >= shark1ypos-10)) || ((xpos <= shark2xpos+10)&& (xpos >= shark2xpos-10) && (ypos <= shark2ypos+10) && (ypos >= shark2ypos-10))) 
+		else
+		begin 
+			case(state)
+				q_STILL:
 				begin
-					xpos<=450;
-					ypos<=250;
-					shark1xpos <= 220;
-					shark1ypos <= 135;
-					shark2xpos <= 440;
-					shark2ypos <= 330;
-					bottle1xpos <= 250;
-					bottle1ypos <= 440;
-					bottle2xpos <= 570;
-					bottle2ypos <= 190;
+					shark1xpos <= shark1xpos - 3;
+					shark2xpos <= shark2xpos - 2;
+					bottle2xpos <= bottle2xpos - 1;
+					if (down)
+						state <= q_DOWN;
+					if (up)
+						state <= q_UP;
+					if (!(up) && !(down))
+						state <= q_STILL;
+					
+					if ( ((xpos <= shark1xpos+10)&& (xpos >= shark1xpos-10) && (ypos <= shark1ypos+10) && (ypos >= shark1ypos-10)) || ((xpos <= shark2xpos+10)&& (xpos >= shark2xpos-10) && (ypos <= shark2ypos+10) && (ypos >= shark2ypos-10))) 
+						state <= rst;
 				end
+
+				q_UP:
+				begin
+					ypos<=ypos-2;
+					if (ypos==34)
+						ypos<=36;
+						
+					shark1xpos <= shark1xpos -3;
+					shark2xpos <= shark2xpos -2;
+					bottle2xpos <= bottle2xpos - 1;
+					if (down)
+						state <= q_DOWN;
+					if (up)
+						state <= q_UP;
+					if (!(up) && !(down))
+						state <= q_STILL;
+					if ( ((xpos <= shark1xpos+10)&& (xpos >= shark1xpos-10) && (ypos <= shark1ypos+10) && (ypos >= shark1ypos-10)) || ((xpos <= shark2xpos+10)&& (xpos >= shark2xpos-10) && (ypos <= shark2ypos+10) && (ypos >= shark2ypos-10))) 
+						state <= rst;
+				end
+				
+				q_DOWN:
+				begin
+					ypos<=ypos+2;
+					if(ypos==514)
+						ypos<=512;
+						
+					shark1xpos <= shark1xpos -3;
+					shark2xpos <= shark2xpos -2;
+					bottle2xpos <= bottle2xpos - 1;
+					if (up)
+						state <= q_UP;
+					if (down)
+						state <= q_DOWN;
+					if (!(up) && !(down))
+						state <= q_STILL;
+					if ( ((xpos <= shark1xpos+10)&& (xpos >= shark1xpos-10) && (ypos <= shark1ypos+10) && (ypos >= shark1ypos-10)) || ((xpos <= shark2xpos+10)&& (xpos >= shark2xpos-10) && (ypos <= shark2ypos+10) && (ypos >= shark2ypos-10))) 
+						state <= rst;
+				end
+				
+			endcase
 		end
 	end
+			
+
+	// 	end
+	// 	else if (clk) begin
+		
+	// 	/* Note that the top left of the screen does NOT correlate to vCount=0 and hCount=0. The display_controller.v file has the 
+	// 		synchronizing pulses for both the horizontal sync and the vertical sync begin at vcount=0 and hcount=0. Recall that after 
+	// 		the length of the pulse, there is also a short period called the back porch before the display area begins. So effectively, 
+	// 		the top left corner corresponds to (hcount,vcount)~(144,35). Which means with a 640x480 resolution, the bottom right corner 
+	// 		corresponds to ~(783,515).  
+	// 	*/
+			
+
+	// 		if(right) begin
+	// 			xpos<=xpos+2; //change the amount you increment to make the speed faster 
+	// 			if(xpos==800) //these are rough values to attempt looping around, you can fine-tune them to make it more accurate- refer to the block comment above
+	// 				xpos<=150;
+	// 		end
+	// 		else if(left) begin
+	// 			xpos<=xpos-2;
+	// 			if(xpos==150)
+	// 				xpos<=800;
+	// 		end
+	// 		else if(up) begin
+	// 			ypos<=ypos-2;
+	// 			if(ypos==34)
+	// 				ypos<=514;
+	// 		end
+	// 		else if(down) begin
+	// 			ypos<=ypos+2;
+	// 			if(ypos==514)
+	// 				ypos<=34;
+	// 		end
+			
+	// 		if ( ((xpos <= shark1xpos+10)&& (xpos >= shark1xpos-10) && (ypos <= shark1ypos+10) && (ypos >= shark1ypos-10)) || ((xpos <= shark2xpos+10)&& (xpos >= shark2xpos-10) && (ypos <= shark2ypos+10) && (ypos >= shark2ypos-10))) 
+	// 			begin
+	// 				xpos<=450;
+	// 				ypos<=250;
+	// 				shark1xpos <= 220;
+	// 				shark1ypos <= 135;
+	// 				shark2xpos <= 440;
+	// 				shark2ypos <= 330;
+	// 				bottle1xpos <= 250;
+	// 				bottle1ypos <= 440;
+	// 				bottle2xpos <= 570;
+	// 				bottle2ypos <= 190;
+	// 			end
+	// 	end
+	// end
 	
 	//the background color reflects the most recent button press
 	always@(posedge clk, posedge rst) begin
@@ -140,7 +210,5 @@ module block_controller(
 			else if(up)
 				background <= 12'b0000_1111_1111; //blue
 	end
-
-	
 	
 endmodule
