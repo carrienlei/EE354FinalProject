@@ -9,17 +9,12 @@ module block_controller(
 	input [9:0] hCount, vCount,
 	output reg [11:0] rgb,
 	output reg [11:0] background,
-	output q_STILL, q_UP, q_DOWN
+	output q_STILL, q_UP, q_DOWN, q_DONE
    );
 
-	reg[2:0] state;
-	assign{q_STILL, q_UP, q_DOWN} = state;
+	reg[3:0] state;
+	assign{q_STILL, q_UP, q_DOWN, q_DONE} = state;
 
-	localparam
-		q_STILL = 3'b001,
-	    q_UP = 3'b010,
-	    q_DOWN = 3'b100,
-		UNK = 3'bXXX;
 
 	wire block_fill;
 	wire sand_zone;
@@ -31,6 +26,8 @@ module block_controller(
 	//these two values dictate the center of the block, incrementing and decrementing them leads the block to move in certain directions
 	reg [9:0] xpos, ypos;
 	reg [9:0] shark1xpos, shark1ypos, shark2xpos, shark2ypos, bottle1xpos, bottle1ypos, bottle2xpos, bottle2ypos;
+	
+	reg [3:0] bottleCount;
 	
 	parameter RED   = 12'b1111_0000_0000;
 	parameter SHARK =  12'b0000_0101_1000; // 058 grey
@@ -72,8 +69,7 @@ module block_controller(
 
 	always@(posedge clk, posedge rst) 
 	begin
-		if(rst) begin
-		
+		if(rst) begin		
 			xpos<=450;
 			ypos<=250;
 			shark1xpos <= 220;
@@ -82,8 +78,8 @@ module block_controller(
 			shark2ypos <= 330;
 			bottle1xpos <= 250;
 			bottle1ypos <= 440;
-			bottle2xpos <= 570;
-			bottle2ypos <= 190;
+			bottle2xpos <= 170;
+			bottle2ypos <= 200;
 			state <= q_STILL;
 			end
 		else
@@ -103,6 +99,21 @@ module block_controller(
 					
 					if ( ((xpos <= shark1xpos+10)&& (xpos >= shark1xpos-10) && (ypos <= shark1ypos+10) && (ypos >= shark1ypos-10)) || ((xpos <= shark2xpos+10)&& (xpos >= shark2xpos-10) && (ypos <= shark2ypos+10) && (ypos >= shark2ypos-10))) 
 						state <= rst;
+					
+					if  ((xpos <= bottle1xpos+10)&& (xpos >= bottle1xpos-10) && (ypos <= bottle1ypos+10) && (ypos >= bottle1ypos-10)) 						
+						begin
+							bottleCount <= bottleCount + 1;
+							// assign bottle1 = ((hCount >= (bottle1xpos-0)) && (hCount <= (bottle1xpos+0))) && ((vCount >= (bottle1ypos-0)) && (vCount <= (bottle1ypos+0))) ? 1 : 0;
+						end
+
+					if  ((xpos <= bottle2xpos+10)&& (xpos >= bottle2xpos-10) && (ypos <= bottle2ypos+10) && (ypos >= bottle2ypos-10)) 						
+						begin
+							bottleCount <= bottleCount + 1;
+							// assign bottle2 = ((hCount >= (bottle2xpos-0)) && (hCount <= (bottle2xpos+0))) && ((vCount >= (bottle2ypos-0)) && (vCount <= (bottle2ypos+0))) ? 1 : 0;
+						end
+					
+					if (bottleCount == 3)
+						state <= q_DONE;	
 				end
 
 				q_UP:
@@ -122,6 +133,22 @@ module block_controller(
 						state <= q_STILL;
 					if ( ((xpos <= shark1xpos+10)&& (xpos >= shark1xpos-10) && (ypos <= shark1ypos+10) && (ypos >= shark1ypos-10)) || ((xpos <= shark2xpos+10)&& (xpos >= shark2xpos-10) && (ypos <= shark2ypos+10) && (ypos >= shark2ypos-10))) 
 						state <= rst;
+						
+					if  ((xpos <= bottle1xpos+10)&& (xpos >= bottle1xpos-10) && (ypos <= bottle1ypos+10) && (ypos >= bottle1ypos-10)) 						
+						begin
+							bottleCount <= bottleCount + 1;
+							// assign bottle1 = ((hCount >= (bottle1xpos-0)) && (hCount <= (bottle1xpos+0))) && ((vCount >= (bottle1ypos-0)) && (vCount <= (bottle1ypos+0))) ? 1 : 0;
+						end
+
+					if  ((xpos <= bottle2xpos+10)&& (xpos >= bottle2xpos-10) && (ypos <= bottle2ypos+10) && (ypos >= bottle2ypos-10)) 						
+						begin
+							bottleCount <= bottleCount + 1;
+							// assign bottle2 = ((hCount >= (bottle2xpos-0)) && (hCount <= (bottle2xpos+0))) && ((vCount >= (bottle2ypos-0)) && (vCount <= (bottle2ypos+0))) ? 1 : 0;
+						end
+					
+					if (bottleCount == 8)
+						state <= q_DONE;
+					
 				end
 				
 				q_DOWN:
@@ -141,8 +168,26 @@ module block_controller(
 						state <= q_STILL;
 					if ( ((xpos <= shark1xpos+10)&& (xpos >= shark1xpos-10) && (ypos <= shark1ypos+10) && (ypos >= shark1ypos-10)) || ((xpos <= shark2xpos+10)&& (xpos >= shark2xpos-10) && (ypos <= shark2ypos+10) && (ypos >= shark2ypos-10))) 
 						state <= rst;
+					
+					if  ((xpos <= bottle1xpos+10)&& (xpos >= bottle1xpos-10) && (ypos <= bottle1ypos+10) && (ypos >= bottle1ypos-10)) 						
+						begin
+							bottleCount <= bottleCount + 1;
+							// assign bottle1 = ((hCount >= (bottle1xpos-0)) && (hCount <= (bottle1xpos+0))) && ((vCount >= (bottle1ypos-0)) && (vCount <= (bottle1ypos+0))) ? 1 : 0;
+						end
+
+					if  ((xpos <= bottle2xpos+10)&& (xpos >= bottle2xpos-10) && (ypos <= bottle2ypos+10) && (ypos >= bottle2ypos-10)) 						
+						begin
+							bottleCount <= bottleCount + 1;
+							// assign bottle2 = ((hCount >= (bottle2xpos-0)) && (hCount <= (bottle2xpos+0))) && ((vCount >= (bottle2ypos-0)) && (vCount <= (bottle2ypos+0))) ? 1 : 0;
+						end					
+					if (bottleCount == 8)
+						state <= q_DONE;
+						
 				end
 				
+				q_DONE:
+					background <= 12'b1111_1111_1111;
+			
 			endcase
 		end
 	end
@@ -199,7 +244,7 @@ module block_controller(
 	//the background color reflects the most recent button press
 	always@(posedge clk, posedge rst) begin
 		if(rst)
-			background <= 12'b0000_1111_1111; //white
+			background <= 12'b0000_0000_0000; //white
 		else 
 			if(right)
 				background <= 12'b0000_1111_1111; //yellow
