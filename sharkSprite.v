@@ -1,4 +1,4 @@
-module sharkpixel_rom
+module sharkSprite
 	(
 		input wire clk,
 		input wire [3:0] row,

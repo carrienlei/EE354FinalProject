@@ -1,4 +1,4 @@
-module pixelfish_rom
+module fishSprite
 	(
 		input wire clk,
 		input wire [2:0] row,
