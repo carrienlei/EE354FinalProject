@@ -12,6 +12,7 @@ module block_controller(
 	// output q_STILL, q_UP, q_DOWN, q_DONE,
 	// output reg out
 	
+	
    );
 
 	/* reg[3:0] state;
