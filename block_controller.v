@@ -20,7 +20,7 @@ module block_controller(
 	parameter IDLE = 3'b000;  // Idle state
 	parameter UP = 3'b001;    // Up state
 	parameter DN = 3'b010;    // Down state
-	// parameter DEAD = 3'b011;
+	parameter DEAD = 3'b011;
 	// parameter GAME_OVER = 3'b100;
 	
 	// Define the state register and next state logic
@@ -76,6 +76,7 @@ module block_controller(
 		else	
 			rgb=background_rgb;
 	end
+
 		//the +-5 for the positions give the dimension of the block (i.e. it will be 10x10 pixels)
 	assign block_fill=vCount>=(ypos-5) && vCount<=(ypos+5) && hCount>=(xpos-5) && hCount<=(xpos+5);
 	// assign block_fill = color_data;
@@ -111,7 +112,7 @@ module block_controller(
 		shark1xpos <= shark1xpos - 3;
 		shark2xpos <= shark2xpos - 2;
 		bottle1xpos <= bottle1xpos -2;
-		bottle2xpos <= bottle2xpos - 1;		
+		bottle2xpos <= bottle2xpos - 1;	
 		
 		case (state)
 			IDLE: begin
@@ -122,7 +123,8 @@ module block_controller(
 					next_state = DN;
 				// end else if (bottle_count == 8) begin
 				//	next_state = GAME_OVER;
-			
+				end else if ( ((xpos && shark1xpos) == 1) && ((ypos && shark1ypos) == 1)	) begin
+					next_state = DEAD;
 				end else begin
 					next_state = IDLE;
 				end
@@ -140,7 +142,8 @@ module block_controller(
 					next_state = UP;
 				// end else if (bottle_count == 8) begin
 				// 	next_state = GAME_OVER;
-				
+				end else if ( ((xpos && shark1xpos) == 1) && ((ypos && shark1ypos) == 1)	) begin
+					next_state = DEAD;
 				end else begin
 					next_state = IDLE;
 				end
@@ -152,6 +155,8 @@ module block_controller(
 					ypos<=512;
 				if (up) begin
 					next_state = UP;
+				end else if ( ((xpos && shark1xpos) == 1) && ((ypos && shark1ypos) == 1)	) begin
+					next_state = DEAD;
 				end else if (down) begin
 					next_state = DN;
 				//end else if (bottle_count == 8) begin
@@ -163,10 +168,14 @@ module block_controller(
 			end
 			/* GAME_OVER: begin
 				background <= 12'b0000_0000_0000;
-			end
+			end */
 			DEAD: begin
 				background <= 12'b1111_1111_0000;
-			end */
+				shark1 <= 0;
+				shark2 <=0;
+				bottle1 <=0; 
+				bottle2 <= 0;
+			end 
 		endcase
 		end
 	end
@@ -181,7 +190,7 @@ module block_controller(
 			else if(left)
 				background <= 12'b0000_1111_1111; //turquoise
 			else if(down)
-				background <= 12'b1111_0000_1111; //green
+				background <= 12'b0000_1111_1111; //green
 			else if(up)
 				background <= 12'b0000_1111_1111; //blue
 	end
