@@ -73,12 +73,12 @@ module vga_top(
 					.x(x), .y(y), .collision(collision), .rgb_out(diver_rgb), .diver_on(diver_on), 
 					.y_x(y_x), .y_y(y_y)); */
 				 
-    shark shark1(.clk(clk), .reset(reset), .shark_x(shark_x), .shark_y(shark_y),
+    /* shark shark1(.clk(clk), .reset(reset), .shark_x(shark_x), .shark_y(shark_y),
 				      .shark_on(shark_on), .rgb_out(shark_rgb));
 
     bottle bottle1(.clk(clk), .reset(reset), .bottle_x(bottle_x), .bottle_y(bottle_y),
 				      .bottle_on(bottle_on), .rgb_out(bottle_rgb));
-					  
+		 */			  
 					  
 	assign vgaR = rgb[11 : 8];
 	assign vgaG = rgb[7  : 4];
