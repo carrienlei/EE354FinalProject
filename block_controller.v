@@ -8,20 +8,38 @@ module block_controller(
 	// input up, input down,
 	input [9:0] hCount, vCount,
 	output reg [11:0] rgb,
-	output reg [11:0] background,
-	output q_STILL, q_UP, q_DOWN, q_DONE
+	output reg [11:0] background
+	// output q_STILL, q_UP, q_DOWN, q_DONE,
+	// output reg out
    );
 
-	reg[3:0] state;
-	assign{q_STILL, q_UP, q_DOWN, q_DONE} = state;
+	/* reg[3:0] state;
+	assign{q_STILL, q_UP, q_DOWN, q_DONE} = state; */
+	
+	parameter IDLE = 3'b000;  // Idle state
+	parameter UP = 3'b001;    // Up state
+	parameter DN = 3'b010;    // Down state
+	parameter DEAD = 3'b011;
+	parameter GAME_OVER = 3'b100;
+	
+	// Define the state register and next state logic
+	reg [1:0] state, next_state;
 
-
+	always @(posedge clk, posedge rst) begin
+		if (rst) begin
+			state <= IDLE;
+		end else begin
+			state <= next_state;
+		end
+	end
+	
 	wire block_fill;
 	wire sand_zone;
 	wire shark1;
 	wire shark2;
 	wire bottle1;
 	wire bottle2;
+	// parameter bottle_count = 3'b000;
 	
 	//these two values dictate the center of the block, incrementing and decrementing them leads the block to move in certain directions
 	reg [9:0] xpos, ypos;
@@ -57,7 +75,7 @@ module block_controller(
 	assign block_fill=vCount>=(ypos-5) && vCount<=(ypos+5) && hCount>=(xpos-5) && hCount<=(xpos+5);
 	
 	// assign sand zone
-	assign sand_zone = ((hCount >= 10'd144) && (hCount <= 10'd784)) && ((vCount >= 10'd420) && (vCount <= 10'd490)) ? 1 : 0;
+	assign sand_zone = ((hCount >= 10'd144) && (hCount <= 10'd784)) && ((vCount >= 10'd490) && (vCount <= 10'd520)) ? 1 : 0;
 
 	// assign sharks
 	assign shark1 = ((hCount >= (shark1xpos-10)) && (hCount <= (shark1xpos+10))) && ((vCount >= (shark1ypos-5)) && (vCount <= (shark1ypos+5))) ? 1 : 0;
@@ -66,7 +84,114 @@ module block_controller(
 	// assign bottles
 	assign bottle1 = ((hCount >= (bottle1xpos-2)) && (hCount <= (bottle1xpos+2))) && ((vCount >= (bottle1ypos-4)) && (vCount <= (bottle1ypos+4))) ? 1 : 0;
 	assign bottle2 = ((hCount >= (bottle2xpos-2)) && (hCount <= (bottle2xpos+2))) && ((vCount >= (bottle2ypos-4)) && (vCount <= (bottle2ypos+4))) ? 1 : 0;
+	
+		// Define the state transition logic
+	always @(posedge clk, posedge rst) begin
+		if (rst) begin
+			xpos<=200;
+			ypos<=250;
+			shark1xpos <= 220;
+			shark1ypos <= 135;
+			shark2xpos <= 440;
+			shark2ypos <= 330;
+			bottle1xpos <= 250;
+			bottle1ypos <= 440;
+			bottle2xpos <= 170;
+			bottle2ypos <= 200;
+			// bottle_count = 3'b000;
+			next_state<= IDLE;
+			end
+		else 
+		begin
+		shark1xpos <= shark1xpos - 3;
+		shark2xpos <= shark2xpos - 2;
+		bottle1xpos <= bottle1xpos -2;
+		bottle2xpos <= bottle2xpos - 1;		
+		
+		case (state)
+			IDLE: begin
+				// out = 1'b0;
+				if (up) begin
+					next_state = UP;
+				end else if (down) begin
+					next_state = DN;
+				// end else if (bottle_count == 8) begin
+				//	next_state = GAME_OVER;
+			
+				end else begin
+					next_state = IDLE;
+				end
+				
+			end
+			UP: begin
+			// out = 1'b1;
+				ypos<=ypos-1;
+				if (ypos==40)
+					ypos<=42;
+					
+				if (down) begin
+					next_state = DN;
+				end else if (up) begin
+					next_state = UP;
+				// end else if (bottle_count == 8) begin
+				// 	next_state = GAME_OVER;
+				
+				end else begin
+					next_state = IDLE;
+				end
+			end
+			DN: begin
+				// out = 1'b0;
+				ypos<=ypos+1;
+				if(ypos==514)
+					ypos<=512;
+				if (up) begin
+					next_state = UP;
+				end else if (down) begin
+					next_state = DN;
+				//end else if (bottle_count == 8) begin
+				//	next_state = GAME_OVER;
+				
+				end else begin
+					next_state = IDLE;
+				end
+			end
+			GAME_OVER: begin
+				background <= 12'b0000_0000_0000;
+			end
+			DEAD: begin
+				background <= 12'b1111_1111_0000;
+			end
+		endcase
+		end
+	end
+	
+	
+	always@(posedge clk, posedge rst) begin
+		if(rst)
+			background <= 12'b0000_0000_0000; //white
+		else 
+			if(right)
+				background <= 12'b0000_1111_1111; //yellow
+			else if(left)
+				background <= 12'b0000_1111_1111; //turquoise
+			else if(down)
+				background <= 12'b1111_0000_1111; //green
+			else if(up)
+				background <= 12'b0000_1111_1111; //blue
+	end
+	
+	always @(*)
+		if (rst)
+			background <= 12'b0000_0000_0000;
+		else
+		if (((xpos <= shark1xpos+10)&& (xpos >= shark1xpos-10) && (ypos <= shark1ypos+10) && (ypos >= shark1ypos-10)) || ((xpos <= shark2xpos+10)&& (xpos >= shark2xpos-10) && (ypos <= shark2ypos+10) && (ypos >= shark2ypos-10))) begin
+			next_state = DEAD;
+		end
+	
+endmodule
 
+/*
 	always@(posedge clk, posedge rst) 
 	begin
 		if(rst) begin		
@@ -83,20 +208,23 @@ module block_controller(
 			state <= q_STILL;
 			end
 		else
-		begin 
+		begin
+			shark1xpos <= shark1xpos - 3;
+			shark2xpos <= shark2xpos - 2;
+			bottle1xpos <= bottle1xpos -2;
+			bottle2xpos <= bottle2xpos - 1;	
+			
 			case(state)
 				q_STILL:
 				begin
-					shark1xpos <= shark1xpos - 3;
-					shark2xpos <= shark2xpos - 2;
-					bottle2xpos <= bottle2xpos - 1;
 					if (down)
 						state <= q_DOWN;
-					if (up)
+					else if (up)
 						state <= q_UP;
-					if (!(up) && !(down))
+					else if (!(up) && !(down))
 						state <= q_STILL;
-					
+						
+						
 					if ( ((xpos <= shark1xpos+10)&& (xpos >= shark1xpos-10) && (ypos <= shark1ypos+10) && (ypos >= shark1ypos-10)) || ((xpos <= shark2xpos+10)&& (xpos >= shark2xpos-10) && (ypos <= shark2ypos+10) && (ypos >= shark2ypos-10))) 
 						state <= rst;
 					
@@ -122,15 +250,14 @@ module block_controller(
 					if (ypos==34)
 						ypos<=36;
 						
-					shark1xpos <= shark1xpos -3;
-					shark2xpos <= shark2xpos -2;
-					bottle2xpos <= bottle2xpos - 1;
 					if (down)
 						state <= q_DOWN;
-					if (up)
+					else if (up)
 						state <= q_UP;
-					if (!(up) && !(down))
+					else if (!(up) && !(down))
 						state <= q_STILL;
+						
+						
 					if ( ((xpos <= shark1xpos+10)&& (xpos >= shark1xpos-10) && (ypos <= shark1ypos+10) && (ypos >= shark1ypos-10)) || ((xpos <= shark2xpos+10)&& (xpos >= shark2xpos-10) && (ypos <= shark2ypos+10) && (ypos >= shark2ypos-10))) 
 						state <= rst;
 						
@@ -156,16 +283,15 @@ module block_controller(
 					ypos<=ypos+2;
 					if(ypos==514)
 						ypos<=512;
-						
-					shark1xpos <= shark1xpos -3;
-					shark2xpos <= shark2xpos -2;
-					bottle2xpos <= bottle2xpos - 1;
-					if (up)
-						state <= q_UP;
+
 					if (down)
 						state <= q_DOWN;
-					if (!(up) && !(down))
+					else if (up)
+						state <= q_UP;
+					else if (!(up) && !(down))
 						state <= q_STILL;
+						
+						
 					if ( ((xpos <= shark1xpos+10)&& (xpos >= shark1xpos-10) && (ypos <= shark1ypos+10) && (ypos >= shark1ypos-10)) || ((xpos <= shark2xpos+10)&& (xpos >= shark2xpos-10) && (ypos <= shark2ypos+10) && (ypos >= shark2ypos-10))) 
 						state <= rst;
 					
@@ -191,55 +317,13 @@ module block_controller(
 			endcase
 		end
 	end
-			
-
-	// 	end
-	// 	else if (clk) begin
 		
-	// 	/* Note that the top left of the screen does NOT correlate to vCount=0 and hCount=0. The display_controller.v file has the 
+	// 	 Note that the top left of the screen does NOT correlate to vCount=0 and hCount=0. The display_controller.v file has the 
 	// 		synchronizing pulses for both the horizontal sync and the vertical sync begin at vcount=0 and hcount=0. Recall that after 
 	// 		the length of the pulse, there is also a short period called the back porch before the display area begins. So effectively, 
 	// 		the top left corner corresponds to (hcount,vcount)~(144,35). Which means with a 640x480 resolution, the bottom right corner 
 	// 		corresponds to ~(783,515).  
-	// 	*/
-			
-
-	// 		if(right) begin
-	// 			xpos<=xpos+2; //change the amount you increment to make the speed faster 
-	// 			if(xpos==800) //these are rough values to attempt looping around, you can fine-tune them to make it more accurate- refer to the block comment above
-	// 				xpos<=150;
-	// 		end
-	// 		else if(left) begin
-	// 			xpos<=xpos-2;
-	// 			if(xpos==150)
-	// 				xpos<=800;
-	// 		end
-	// 		else if(up) begin
-	// 			ypos<=ypos-2;
-	// 			if(ypos==34)
-	// 				ypos<=514;
-	// 		end
-	// 		else if(down) begin
-	// 			ypos<=ypos+2;
-	// 			if(ypos==514)
-	// 				ypos<=34;
-	// 		end
-			
-	// 		if ( ((xpos <= shark1xpos+10)&& (xpos >= shark1xpos-10) && (ypos <= shark1ypos+10) && (ypos >= shark1ypos-10)) || ((xpos <= shark2xpos+10)&& (xpos >= shark2xpos-10) && (ypos <= shark2ypos+10) && (ypos >= shark2ypos-10))) 
-	// 			begin
-	// 				xpos<=450;
-	// 				ypos<=250;
-	// 				shark1xpos <= 220;
-	// 				shark1ypos <= 135;
-	// 				shark2xpos <= 440;
-	// 				shark2ypos <= 330;
-	// 				bottle1xpos <= 250;
-	// 				bottle1ypos <= 440;
-	// 				bottle2xpos <= 570;
-	// 				bottle2ypos <= 190;
-	// 			end
-	// 	end
-	// end
+	// 	
 	
 	//the background color reflects the most recent button press
 	always@(posedge clk, posedge rst) begin
@@ -251,9 +335,10 @@ module block_controller(
 			else if(left)
 				background <= 12'b0000_1111_1111; //turquoise
 			else if(down)
-				background <= 12'b0000_1111_1111; //green
+				background <= 12'b1111_0000_1111; //green
 			else if(up)
 				background <= 12'b0000_1111_1111; //blue
 	end
 	
 endmodule
+*/

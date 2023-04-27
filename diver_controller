@@ -1,0 +1,148 @@
+`timescale 1ns / 1ps
+
+module diver_controller(
+	input wire clk, //this clock must be a slow enough clock to view the changing positions of the objects
+	input wire bright,
+	input wire reset,
+	input wire up, down, left, right,
+    input wire collision,   
+	input [9:0] hCount, vCount,
+
+	output reg [11:0] rgb,
+	output reg [11:0] background,
+    // output wire direction,
+	// output q_STILL, q_UP, q_DOWN, q_DONE
+    output wire [9:0] y_x, y_y,  
+    output wire [11:0] rgb_out
+   );
+
+    // constant declarations
+    localparam MAX_X = 640;
+    localparam MAX_Y = 480;
+    localparam MIN_Y =  16;
+
+	// reg[3:0] state;
+	// assign{q_STILL, q_UP, q_DOWN, q_DONE} = state;
+	
+    // Diver location register
+	reg [9:0] xpos, ypos;
+    reg [9:0] xpos_next, ypos_next;
+
+    always @(posedge clk, posedge reset)
+        if (reset)
+            begin
+            xpos     <= 320;  // initialize to middle of screen,
+            ypos     <= 250;  // on bottom floor
+            end
+        else
+            begin
+            xpos    <= xpos_next;
+            ypos     <= ypos_next;
+            end
+
+    localparam [1:0] q_STILL = 2'b00,
+                    q_DOWN = 2'b01,
+                    q_UP = 2'b10; 
+
+	// direction register next-state logic
+    always @*
+        begin
+        xpos_next = xpos;   // default, stay the same
+       
+        if(up && !down)    
+            xpos_next= = up;  
+           
+        if(down && !up)     // if right button pressed, change value to RIGHT
+            xpos_next = down;
+        end
+
+    reg [1:0] x_state_reg, x_state_next;
+
+    always @(posedge clk, posedge reset)
+        if (reset)
+            x_state_reg <= q_STILL;
+            xpos<=450;
+			ypos<=250;
+        else
+            x_state_reg <= x_state_next;
+    
+    always @*
+        begin
+            xpos_next <= xpos_reg;
+            x_state_next <= x_state_reg;
+        end
+     
+    case (x_state_reg)
+        q_STILL:
+        begin
+            if (down)
+                x_state_next <= q_DOWN;
+                
+            if (up)
+                x_state_next <= q_UP;
+
+            if (!(up) && !(down))
+                x_state_next <= q_STILL;
+        end
+
+        q_UP:
+		begin
+            ypos<=ypos-2;
+			if (ypos==34)
+				ypos<=36;
+            if (down)
+                x_state_next <= q_DOWN;
+            if (up)
+                x_state_next <= q_UP;
+            if (!(up) && !(down))
+                x_state_next <= q_STILL;
+        end
+
+        q_DOWN:
+		begin
+            ypos<=ypos+2;
+			if(ypos==514)
+				ypos<=512;
+            if (down)
+                x_state_next <= q_DOWN;
+            if (up)
+                x_state_next <= q_UP;
+            if (!(up) && !(down))
+                x_state_next <= q_STILL;
+        end
+        
+    endcase
+				
+	// 	/* Note that the top left of the screen does NOT correlate to vCount=0 and hCount=0. The display_controller.v file has the 
+	// 		synchronizing pulses for both the horizontal sync and the vertical sync begin at vcount=0 and hcount=0. Recall that after 
+	// 		the length of the pulse, there is also a short period called the back porch before the display area begins. So effectively, 
+	// 		the top left corner corresponds to (hcount,vcount)~(144,35). Which means with a 640x480 resolution, the bottom right corner 
+	// 		corresponds to ~(783,515).  
+	// 	*/
+		
+	//the background color reflects the most recent button press
+	always@(posedge clk, posedge rst) begin
+		if(rst)
+			background <= 12'b0000_0000_0000; //white
+		else 
+			if(right)
+				background <= 12'b0000_1111_1111; //yellow
+			else if(left)
+				background <= 12'b0000_1111_1111; //turquoise
+			else if(down)
+				background <= 12'b0000_1111_1111; //green
+			else if(up)
+				background <= 12'b0000_1111_1111; //blue
+	end
+
+    // CHANGE INSTANTIATION NAME
+    sharkSprite shark (.clk, .row(row), .col(col), .color_data(color_data));
+    
+    assign rgb_out = color_data;
+
+    
+    assign y_x = xpos;
+    assign y_y = ypos;
+
+	
+endmodule

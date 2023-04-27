@@ -1,0 +1,33 @@
+module plastic_collision
+	(
+		input direction,                // current direction of player
+		input wire [9:0] player_x, player_y,  // player x/y
+		input wire [9:0] bottle_x, bottle_y,  // bottle x/y	
+		output wire collision 
+    );
+	
+    localparam DOWN = 0;
+    localparam UP = 1;
+	reg collide;
+	
+	always @*
+		begin
+		collide = 0;
+		
+		if(direction == DOWN)
+			begin
+                if  ((player_x <= bottle_x+10) && (player_x >= bottle_x-10) && (player_y <= bottle_y+10) && (player_y >= bottle_y-10))
+                    collide = 1;
+			end
+			
+		if(direction == UP)
+			begin
+                if  ((player_x <= bottle_x+10) && (player_x >= bottle_x-10) && (player_y <= bottle_y+10) && (player_y >= bottle_y-10))
+                    collide = 1;
+            end
+		 
+        end
+	
+	assign collision = collide;
+			
+endmodule
