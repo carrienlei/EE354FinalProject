@@ -32,7 +32,7 @@ module block_controller(
 			state <= next_state;
 		end
 	end
-	
+	wire [11:0] background_rgb;
 	wire block_fill;
 	wire sand_zone;
 	wire shark1;
@@ -69,7 +69,7 @@ module block_controller(
 		else if (bottle2)
 			rgb = 12'b1010_1110_1111;
 		else	
-			rgb=background;
+			rgb=background_rgb;
 	end
 		//the +-5 for the positions give the dimension of the block (i.e. it will be 10x10 pixels)
 	assign block_fill=vCount>=(ypos-5) && vCount<=(ypos+5) && hCount>=(xpos-5) && hCount<=(xpos+5);
