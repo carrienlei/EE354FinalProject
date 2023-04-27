@@ -1,4 +1,4 @@
-module fishSprite
+module fish_rom
 	(
 		input wire clk,
 		input wire [2:0] row,
