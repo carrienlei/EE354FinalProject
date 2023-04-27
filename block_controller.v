@@ -11,7 +11,7 @@ module block_controller(
 	output reg [11:0] background
 	// output q_STILL, q_UP, q_DOWN, q_DONE,
 	// output reg out
-	
+	output [3:0] bottle_count;
 	
    );
 
@@ -26,6 +26,7 @@ module block_controller(
 	
 	// Define the state register and next state logic
 	reg [1:0] state, next_state;
+	reg [3:0] bottle_count;
 
 	always @(posedge clk, posedge rst) begin
 		if (rst) begin
@@ -52,10 +53,6 @@ module block_controller(
 	parameter RED   = 12'b1111_0000_0000;
 	parameter SHARK =  12'b0000_0101_1000; // 058 grey
 	parameter BOTTLE = 12'b1010_1110_1111; // AEF blue
-	
-	// diver_rom diver(.clk(clk), .row(row), .col(col), .color_data(color_data));	
-	
-	
 	
 	/*when outputting the rgb value in an always block like this, make sure to include the if(~bright) statement, as this ensures the monitor 
 	will output some data to every pixel and not just the images you are trying to display*/
@@ -105,7 +102,7 @@ module block_controller(
 			bottle1ypos <= 440;
 			bottle2xpos <= 170;
 			bottle2ypos <= 200;
-			// bottle_count = 3'b000;
+			bottle_count <= 4'b0000;
 			next_state<= IDLE;
 			end
 		else 
@@ -114,6 +111,15 @@ module block_controller(
 		shark2xpos <= shark2xpos - 2;
 		bottle1xpos <= bottle1xpos -2;
 		bottle2xpos <= bottle2xpos - 1;	
+
+		if ( (( (xpos < bottle1xpos+5) && (xpos > bottle1xpos-5)	) || 
+			( (ypos < bottle1ypos+5) && (ypos > bottle1ypos-5)	) ) ||
+
+			(( (xpos < bottle2xpos+5) && (xpos > bottle2xpos-5)	) || 
+			( (ypos < bottle2ypos+5) && (ypos > bottle2ypos-5)	) ) ) begin
+					bottle_count <= bottle_count +1;
+		end
+
 		
 		case (state)
 			IDLE: begin
@@ -122,10 +128,10 @@ module block_controller(
 					next_state = UP;
 				end else if (down) begin
 					next_state = DN;
-				// end else if (bottle_count == 8) begin
-				//	next_state = GAME_OVER;
-				end else if ( ((xpos && shark1xpos) == 1) && ((ypos && shark1ypos) == 1)	) begin
+				end else if (( (xpos < shark1xpos+5) && (xpos > shark1xpos-5)	) || ( (ypos < shark1ypos+5) && (ypos > shark1ypos-5)	) ) begin
 					next_state = DEAD;
+				end else if (bottle_count == 5) begin
+					next_state = GAME_OVER;
 				end else begin
 					next_state = IDLE;
 				end
@@ -141,9 +147,9 @@ module block_controller(
 					next_state = DN;
 				end else if (up) begin
 					next_state = UP;
-				// end else if (bottle_count == 8) begin
-				// 	next_state = GAME_OVER;
-				end else if ( ((xpos && shark1xpos) == 1) && ((ypos && shark1ypos) == 1)	) begin
+				end else if (bottle_count == 5) begin
+					next_state = GAME_OVER;
+				end else if (( (xpos < shark1xpos+5) && (xpos > shark1xpos-5)	) || ( (ypos < shark1ypos+5) && (ypos > shark1ypos-5)	) ) begin
 					next_state = DEAD;
 				end else begin
 					next_state = IDLE;
@@ -156,31 +162,33 @@ module block_controller(
 					ypos<=512;
 				if (up) begin
 					next_state = UP;
-				end else if ( ((xpos && shark1xpos) == 1) && ((ypos && shark1ypos) == 1)	) begin
+				end else if (( (xpos < shark1xpos+5) && (xpos > shark1xpos-5)	) || ( (ypos < shark1ypos+5) && (ypos > shark1ypos-5)	) ) begin
 					next_state = DEAD;
 				end else if (down) begin
 					next_state = DN;
-				//end else if (bottle_count == 8) begin
-				//	next_state = GAME_OVER;
-				
+				end else if (bottle_count == 5) begin
+					next_state = GAME_OVER;	
 				end else begin
 					next_state = IDLE;
 				end
 			end
-			/* GAME_OVER: begin
-				background <= 12'b0000_0000_0000;
-			end */
+			GAME_OVER: begin
+				background <= 12'b1111_1111_1111;
+				// shark1 <= 0;
+				// shark2 <=0;
+				// bottle1 <=0; 
+				// bottle2 <= 0;
+			end 
 			DEAD: begin
-				background <= 12'b1111_1111_0000;
-				shark1 <= 0;
-				shark2 <=0;
-				bottle1 <=0; 
-				bottle2 <= 0;
+				background <= 12'b1010_1111_0101;
+				// shark1 <= 0;
+				// shark2 <=0;
+				// bottle1 <=0; 
+				// bottle2 <= 0;
 			end 
 		endcase
 		end
 	end
-	
 	
 	always@(posedge clk, posedge rst) begin
 		if(rst)

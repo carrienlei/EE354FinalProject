@@ -67,7 +67,7 @@ module vga_top(
 	
 	display_controller dc(.clk(ClkPort), .hSync(hSync), .vSync(vSync), .bright(bright), .hCount(hc), .vCount(vc));
 	block_controller sc(.clk(move_clk), .bright(bright), .rst(BtnC), .up(BtnU), .down(BtnD),.left(BtnL),.right(BtnR),
-						.hCount(hc), .vCount(vc), .rgb(rgb), .background(background));
+						.hCount(hc), .vCount(vc), .rgb(rgb), .background(background), .bottle_count(bottle_count));
 
 	/* diver_controller diver(.clk(clk), .btnC(reset), .btnU(up), .btnD(down),.video_on(video_on), 
 					.x(x), .y(y), .collision(collision), .rgb_out(diver_rgb), .diver_on(diver_on), 
