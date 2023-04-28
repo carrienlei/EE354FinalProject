@@ -67,18 +67,7 @@ module vga_top(
 	
 	display_controller dc(.clk(ClkPort), .hSync(hSync), .vSync(vSync), .bright(bright), .hCount(hc), .vCount(vc));
 	block_controller sc(.clk(move_clk), .clk25(ClkPort), .bright(bright), .rst(BtnC), .up(BtnU), .down(BtnD),.left(BtnL),.right(BtnR),
-						.hCount(hc), .vCount(vc), .rgb(rgb), .background(background));
-
-	/* diver_controller diver(.clk(clk), .btnC(reset), .btnU(up), .btnD(down),.video_on(video_on), 
-					.x(x), .y(y), .collision(collision), .rgb_out(diver_rgb), .diver_on(diver_on), 
-					.y_x(y_x), .y_y(y_y)); */
-				 
-    /* shark shark1(.clk(clk), .reset(reset), .shark_x(shark_x), .shark_y(shark_y),
-				      .shark_on(shark_on), .rgb_out(shark_rgb));
-
-    bottle bottle1(.clk(clk), .reset(reset), .bottle_x(bottle_x), .bottle_y(bottle_y),
-				      .bottle_on(bottle_on), .rgb_out(bottle_rgb));
-		 */			  
+						.hCount(hc), .vCount(vc), .rgb(rgb), .background(background));		  
 					  
 	assign vgaR = rgb[11 : 8];
 	assign vgaG = rgb[7  : 4];

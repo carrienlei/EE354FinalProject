@@ -6,18 +6,10 @@ module block_controller(
 	input bright,
 	input rst,
 	input up, input down, input left, input right,
-	// input up, input down,
 	input [9:0] hCount, vCount,
 	output reg [11:0] rgb,
 	output reg [11:0] background
-	// output q_STILL, q_UP, q_DOWN, q_DONE,
-	// output reg out
-	// output [3:0] bottle_count
-	
    );
-
-	/* reg[3:0] state;
-	assign{q_STILL, q_UP, q_DOWN, q_DONE} = state; */
 	
 	parameter IDLE = 3'b000;  // Idle state
 	parameter UP = 3'b001;    // Up state
@@ -38,17 +30,24 @@ module block_controller(
 	end
 	wire [11:0] background_rgb;
 	wire block_fill;
+	wire block_head;
 	wire sand_zone;
 	wire shark1;
 	wire shark2;
 	wire bottle1;
 	wire bottle2;
+	wire bottle3;
 	reg sharkCollision; // collision occured
 	reg sharkCollisionAtClock;
 	reg sharkACK;
 	reg bottleACK;
 	reg bottleCollision;
 	reg bottleCollisionAtClock;
+	
+	
+	wire shark3;
+	wire shark4;
+	wire shark5;
 
 
 	
@@ -75,12 +74,14 @@ module block_controller(
 	
 	//these two values dictate the center of the block, incrementing and decrementing them leads the block to move in certain directions
 	reg [9:0] xpos, ypos;
-	reg [9:0] shark1xpos, shark1ypos, shark2xpos, shark2ypos, bottle1xpos, bottle1ypos, bottle2xpos, bottle2ypos;
+	reg [9:0] shark1xpos, shark1ypos, shark2xpos, shark2ypos, bottle1xpos, bottle1ypos, bottle2xpos, bottle2ypos, bottle3xpos, bottle3ypos;
+	reg [9:0] shark3xpos, shark3ypos, shark4xpos, shark4ypos, shark5xpos, shark5ypos;
+
 	
 	reg [3:0] bottle_count;
 	
-	parameter RED   = 12'b1111_0000_0000;
-	parameter SHARK =  12'b0000_0101_1000; // 058 grey
+	parameter HUMAN   = 12'b1101_1001_0111; // D97
+	parameter SHARK =  12'b0000_0101_1000; // 058 grey, 7AB blue
 	parameter BOTTLE = 12'b1010_1110_1111; // AEF blue
 	
 	/*when outputting the rgb value in an always block like this, make sure to include the if(~bright) statement, as this ensures the monitor 
@@ -88,25 +89,37 @@ module block_controller(
 	always@ (*) begin
     	
 		if (block_fill) 
-			rgb = RED; 
+			rgb = HUMAN; 
+		else if (block_head)
+		     rgb = HUMAN;
 		else if (sand_zone == 1)
 			rgb = 12'b1111_1111_0000;
 		else if (shark1)
 			rgb = 12'b0000_0101_1000;
 		else if (shark2)
 			rgb = 12'b0000_0101_1000;
+		else if (shark3)
+			rgb = 12'b0111_1010_1011;
+		else if (shark4)
+			rgb = 12'b0111_1110_1011;
+		else if (shark5)
+			rgb = 12'b0111_1110_1011;
 		else if (bottle1)
 			rgb = 12'b1010_1110_1111;
 		else if (bottle2)
 			rgb = 12'b1010_1110_1111;
+		else if (bottle3)
+			rgb = 12'b1010_1110_1111;
 		else	
 			rgb=background_rgb;
-		sharkCollision = ((block_fill && shark1) || (block_fill && shark2 )) ? 1 : 0;
-		bottleCollision = ((block_fill && bottle1) || (block_fill && bottle2)) ? 1 : 0;
+		sharkCollision = ((block_fill && shark1) || (block_fill && shark2 ) ||(block_fill && shark3) || (block_fill && shark4 ) || (block_fill && shark5) ||
+		                  (block_head && shark1) || (block_head && shark2 ) ||(block_head && shark3) || (block_head && shark4 ) || (block_head && shark5)) ? 1 : 0;
+		bottleCollision = ((block_fill && bottle1) || (block_fill && bottle2) || (block_fill && bottle3)) ? 1 : 0;
 	end
 
 		//the +-5 for the positions give the dimension of the block (i.e. it will be 10x10 pixels)
 	assign block_fill=vCount>=(ypos-5) && vCount<=(ypos+5) && hCount>=(xpos-5) && hCount<=(xpos+5);
+	assign block_head = vCount>=(ypos-1) && vCount<=(ypos+6) && hCount>=(xpos-3) && hCount<=(xpos+3);
 	// assign block_fill = color_data;
 	// assign sand zone
 	assign sand_zone = ((hCount >= 10'd144) && (hCount <= 10'd784)) && ((vCount >= 10'd490) && (vCount <= 10'd520)) ? 1 : 0;
@@ -114,12 +127,15 @@ module block_controller(
 	// assign sharks
 	assign shark1 = ((hCount >= (shark1xpos-10)) && (hCount <= (shark1xpos+10))) && ((vCount >= (shark1ypos-5)) && (vCount <= (shark1ypos+5))) ? 1 : 0;
 	assign shark2 = ((hCount >= (shark2xpos-10)) && (hCount <= (shark2xpos+10))) && ((vCount >= (shark2ypos-5)) && (vCount <= (shark2ypos+5))) ? 1 : 0;
+	assign shark3 = ((hCount >= (shark3xpos-9)) && (hCount <= (shark3xpos+9))) && ((vCount >= (shark3ypos-4)) && (vCount <= (shark3ypos+4))) ? 1 : 0;
+	assign shark4 = ((hCount >= (shark4xpos-8)) && (hCount <= (shark4xpos+8))) && ((vCount >= (shark4ypos-5)) && (vCount <= (shark4ypos+5))) ? 1 : 0;
+	assign shark5 = ((hCount >= (shark5xpos-11)) && (hCount <= (shark5xpos+11))) && ((vCount >= (shark5ypos-3)) && (vCount <= (shark5ypos+3))) ? 1 : 0;
 
-	
 	// assign bottles
 	assign bottle1 = ((hCount >= (bottle1xpos-2)) && (hCount <= (bottle1xpos+2))) && ((vCount >= (bottle1ypos-4)) && (vCount <= (bottle1ypos+4))) ? 1 : 0;
 	assign bottle2 = ((hCount >= (bottle2xpos-2)) && (hCount <= (bottle2xpos+2))) && ((vCount >= (bottle2ypos-4)) && (vCount <= (bottle2ypos+4))) ? 1 : 0;
-	
+	assign bottle3 = ((hCount >= (bottle3xpos-2)) && (hCount <= (bottle3xpos+2))) && ((vCount >= (bottle3ypos-4)) && (vCount <= (bottle3ypos+4))) ? 1 : 0;
+
 		// Define the state transition logic
 	always @(posedge clk, posedge rst) begin
 		if (rst) begin
@@ -128,11 +144,20 @@ module block_controller(
 			shark1xpos <= 220;
 			shark1ypos <= 135;
 			shark2xpos <= 440;
-			shark2ypos <= 330;
+			shark2ypos <= 500;
+			shark3xpos <= 610;
+			shark3ypos <= 289;
+			shark4xpos <= 580;
+			shark4ypos <= 300;
+			shark5xpos <= 420;
+			shark5ypos <= 230;
+			
 			bottle1xpos <= 250;
 			bottle1ypos <= 440;
 			bottle2xpos <= 170;
 			bottle2ypos <= 200;
+			bottle3xpos <= 370;
+			bottle3ypos <= 220;
 			bottle_count <= 4'b0000;
 			next_state <= IDLE;
 			end
@@ -141,8 +166,13 @@ module block_controller(
 		begin
 		shark1xpos <= shark1xpos - 3;
 		shark2xpos <= shark2xpos - 2;
-		bottle1xpos <= bottle1xpos -2;
-		bottle2xpos <= bottle2xpos - 1;	
+		shark3xpos <= shark3xpos - 3;
+		shark4xpos <= shark4xpos - 2;
+		shark5xpos <= shark5xpos -4;
+		
+		bottle1xpos <= bottle1xpos -3;
+		bottle2xpos <= bottle2xpos - 2;	
+		bottle3xpos <= bottle3xpos -2;
 				
 		
 		case (state)
@@ -152,12 +182,10 @@ module block_controller(
 					next_state <= UP;
 				end else if (down) begin
 					next_state <= DN;
-				
-				end else if (bottle_count == 5) begin
-					next_state <= GAME_OVER;
 				end else begin
 					next_state <= IDLE;
 				end
+				
 				sharkACK<=0;
 				bottleACK<=0;
 				if(sharkCollisionAtClock) begin
@@ -166,41 +194,49 @@ module block_controller(
 				end
 				if (bottleCollisionAtClock) begin
 				    ypos <= ypos -20;
+				    xpos <= xpos +60;
 					bottle_count <= bottle_count +1;
 				    bottleACK <= 1;
+				    if (xpos > 580) begin
+				    next_state <= GAME_OVER;
+				    end
 				end
 				
 			end
 			
 			UP: begin
-			// out = 1'b1;
 				ypos<=ypos-1;
-				sharkACK<=0;
-				bottleACK<=0;
+				
 				if (ypos==40)
-					ypos<=42;		
+					ypos<=42;
+							
 				if (down) begin
 					next_state <= DN;
 				end else if (up) begin
 					next_state <= UP;
-				end else if (bottle_count == 5) begin
-					next_state <= GAME_OVER;
 				
 				end else begin
 					next_state <= IDLE;
 				end
+								
+				sharkACK<=0;
+				bottleACK<=0;
 				if(sharkCollisionAtClock) begin
 					next_state<=DEAD;
-					sharkACK=1;
+					sharkACK<=1;
 				end
 				if (bottleCollisionAtClock) begin
+				    ypos <= ypos -10;
+				    xpos <= xpos +60;
 					bottle_count <= bottle_count +1;
-					ypos <= ypos -20;
-					bottleACK <= 1;
+				    bottleACK <= 1;
+				    if (xpos > 580) begin
+				    next_state <= GAME_OVER;
+				    end
+				end
 
 				end
-				
-			end
+
 			DN: begin
 				// out = 1'b0;
 				sharkACK<=0;
@@ -213,47 +249,67 @@ module block_controller(
 				
 				end else if (down) begin
 					next_state <= DN;
-				end else if (bottle_count == 5) begin
-					next_state <= GAME_OVER;	
+				
 				end else begin
 					next_state <= IDLE;
 				end
 				if(sharkCollisionAtClock) begin
 					next_state<=DEAD;
-					sharkACK=1;
+					sharkACK<=1;
 				end
 				if (bottleCollisionAtClock) begin
+				    ypos <= ypos -10;
+				    xpos <= xpos +60;
 					bottle_count <= bottle_count +1;
-					ypos <= ypos -20;
-					bottleACK <= 1;
-
+				    bottleACK <= 1;
+				    if (xpos > 580) begin
+				    next_state <= GAME_OVER;
+				    end
 				end
 			end
 			GAME_OVER: begin
-                xpos<=40;
-                ypos<=450;
+                xpos<=300;
+			    ypos<=350;
                 shark1xpos <= 220;
                 shark1ypos <= 135;
                 shark2xpos <= 440;
-                shark2ypos <= 330;
+                shark2ypos <= 500;
+                shark3xpos <= 610;
+                shark3ypos <= 289;
+                shark4xpos <= 580;
+                shark4ypos <= 300;
+                shark5xpos <= 420;
+                shark5ypos <= 230;
+                
                 bottle1xpos <= 250;
                 bottle1ypos <= 440;
                 bottle2xpos <= 170;
                 bottle2ypos <= 200;
+                bottle3xpos <= 370;
+			    bottle3ypos <= 220;
                 bottle_count <= 4'b0000;
 	
 			end 
 			DEAD: begin
 			    xpos<=200;
-                ypos<=250;
+			    ypos<=250;
                 shark1xpos <= 220;
                 shark1ypos <= 135;
                 shark2xpos <= 440;
-                shark2ypos <= 330;
+                shark2ypos <= 500;
+                shark3xpos <= 610;
+                shark3ypos <= 289;
+                shark4xpos <= 580;
+                shark4ypos <= 300;
+                shark5xpos <= 420;
+                shark5ypos <= 230;
+                
                 bottle1xpos <= 250;
                 bottle1ypos <= 440;
                 bottle2xpos <= 170;
                 bottle2ypos <= 200;
+                bottle3xpos <= 370;
+			    bottle3ypos <= 220;
                 bottle_count <= 4'b0000;
 
 			end 
@@ -263,15 +319,15 @@ module block_controller(
 	
 	always@(posedge clk, posedge rst) begin
 		if(rst)
-			background <= 12'b0000_0000_0000; //white
+			background <= 12'b0000_0000_0000; //black
 		else 
-			if(right)
+			if(UP)
 				background <= 12'b0000_1111_1111; //yellow
-			else if(left)
+			else if(DN)
 				background <= 12'b0000_1111_1111; //turquoise
-			else if(down)
+			else if(IDLE)
 				background <= 12'b0000_1111_1111; //green
-			else if(up)
+			else if(GAME_OVER)
 				background <= 12'b0000_1111_1111; //blue
 	end
 endmodule
