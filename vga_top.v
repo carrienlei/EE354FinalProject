@@ -44,6 +44,7 @@ module vga_top(
 	wire[9:0] hc, vc;
 	wire[15:0] score;
 	wire up,down,left,right;
+	wire q_STILL, q_UP, q_DOWN;
 	wire [3:0] anode;
 	wire [11:0] rgb;
 	wire rst;
@@ -64,11 +65,9 @@ module vga_top(
 	wire move_clk;
 	assign move_clk=DIV_CLK[19]; //slower clock to drive the movement of objects on the vga screen
 	wire [11:0] background;
-	
 	display_controller dc(.clk(ClkPort), .hSync(hSync), .vSync(vSync), .bright(bright), .hCount(hc), .vCount(vc));
-	block_controller sc(.clk(move_clk), .clk25(ClkPort), .bright(bright), .rst(BtnC), .up(BtnU), .down(BtnD),.left(BtnL),.right(BtnR),
-						.hCount(hc), .vCount(vc), .rgb(rgb), .background(background));		  
-					  
+	block_controller sc(.clk(move_clk), .bright(bright), .rst(BtnC), .up(BtnU), .down(BtnD),.left(BtnL),.right(BtnR),.hCount(hc), .vCount(vc), .rgb(rgb), .background(background));
+	
 	assign vgaR = rgb[11 : 8];
 	assign vgaG = rgb[7  : 4];
 	assign vgaB = rgb[3  : 0];
@@ -127,6 +126,13 @@ module vga_top(
 				  2'b11: SSD = SSD3;
 		endcase 
 	end
+
+	block_controller SM(.clk(sys_clk), .reset(reset), 
+								.q_I(q_I), .q_G1get(q_G1get), .q_G1(q_g1), .q_G10get(q_G10get),
+								.q_G10(q_G10), .q_G101get(q_G101get), .q_G101(q_G101),
+								.q_G1011get(q_G1011get), .q_G1011(q_G1011), .q_Opening(q_Opening),
+								.q_Bad(Bad)
+								);	
 
 	// Following is Hex-to-SSD conversion
 	always @ (SSD) 
