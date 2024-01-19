@@ -7,7 +7,6 @@
 ## Revised test_nexys4_verilog.xdc to suit ee354_detour_top.xdc 
 ## Basically commented out the unused 15 switches Sw15-Sw1 
 ##           and also commented out the four buttons BtnL, BtnU, BtnR, and BtnD
-## Gandhi 1/21/2020
 
 # Clock signal
 #Bank = 35, Pin name = IO_L12P_T1_MRCC_35,					Sch name = CLK100MHZ

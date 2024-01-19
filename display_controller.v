@@ -1,20 +1,4 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date:    11:27:11 12/07/2017 
-// Design Name: 
-// Module Name:    DisplayController 
-// Project Name: 
-// Target Devices: 
-// Tool versions: 
-// Description: 
-//
-// Dependencies: 
-//
-// Revision: 
-// Revision 0.01 - File Created
 
 // Additional Comments:  https://learn.digilentinc.com/Documents/269
 // - Use Bahavioural Modelling (always, initial)
@@ -37,6 +21,7 @@ module display_controller(
 		pulse = 0;
 	end
 	
+	//clk25 divide
 	always @(posedge clk)
 		pulse = ~pulse;
 	always @(posedge pulse)
